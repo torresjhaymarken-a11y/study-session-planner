@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Study Session Planner</title>
+
+    <style>
+        :root {
+            --ink: #1E2A44;
+            --paper: #F6F3EC;
+            --sage: #5B8C7B;
+            --sage-dark: #456B5E;
+            --amber: #E0A458;
+            --red: #C1666B;
+            --slate: #DCE3E8;
+            --muted: #7A8290
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        [hidden] {
+            display: none !important
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI",system-ui,sans-serif;
+            background: var(--paper);
+            color: var(--ink)
+        }
+
+        h1, h2 {
+            font-family: Georgia,serif;
+            margin: 0 0 .4rem
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: .85rem;
+            margin: .2rem 0
+        }
+
+        .error {
+            color: var(--red);
+            font-size: .85rem;
+            margin: 0
+        }
+
+        /* buttons */
+        .btn {
+            border: 0;
+            border-radius: 5px;
+            padding: .55rem 1rem;
+            color: #fff;
+            font: inherit;
+            font-size: .9rem;
+            cursor: pointer
+        }
+
+            .btn:hover {
+                filter: brightness(.92)
+            }
+
+        .primary {
+            background: var(--sage)
+        }
+
+        .danger {
+            background: var(--red)
+        }
+
+        .amber {
+            background: var(--amber)
+        }
+
+        .dark {
+            background: var(--ink)
+        }
+
+        .ghost {
+            background: none;
+            border: 1px solid #4a5675
+        }
+
+        /* form fields */
+        label {
+            display: grid;
+            gap: .3rem;
+            font-size: .8rem;
+            font-weight: 600;
+            color: #5B6472
+        }
+
+        input, select {
+            padding: .5rem .6rem;
+            border: 1.5px solid var(--slate);
+            border-radius: 5px;
+            font: inherit;
+            background: #FCFBF8;
+            color: var(--ink)
+        }
+
+            input:focus, select:focus {
+                outline: none;
+                border-color: var(--sage)
+            }
+
+        /* login */
+        .login {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background-image: linear-gradient(#E4DECD 1px,transparent 1px),linear-gradient(90deg,#E4DECD 1px,transparent 1px);
+            background-size: 28px 28px
+        }
+
+        .login-card {
+            background: #fff;
+            width: min(340px,92vw);
+            padding: 2rem;
+            border-top: 4px solid var(--sage);
+            border-radius: 6px;
+            box-shadow: 0 18px 40px rgba(30,42,68,.14);
+            display: grid;
+            gap: .9rem
+        }
+
+        .tag {
+            margin: 0;
+            font-size: .7rem;
+            font-weight: 600;
+            letter-spacing: .4px;
+            color: var(--sage-dark)
+        }
+
+        /* layout */
+        #app {
+            display: flex;
+            min-height: 100vh
+        }
+
+        .sidebar {
+            width: 200px;
+            flex-shrink: 0;
+            background: var(--ink);
+            color: #E9E5DA;
+            padding: 1.4rem 1rem;
+            display: flex;
+            flex-direction: column
+        }
+
+            .sidebar h2 {
+                font-size: 1rem
+            }
+
+            .sidebar p {
+                margin: 0 0 1rem;
+                font-size: .75rem;
+                color: #8B94A6
+            }
+
+        #nav {
+            display: grid;
+            gap: .25rem;
+            flex: 1;
+            align-content: start
+        }
+
+            #nav button {
+                background: none;
+                border: 0;
+                color: #C7CCD8;
+                text-align: left;
+                padding: .6rem .7rem;
+                border-radius: 6px;
+                font: inherit;
+                cursor: pointer
+            }
+
+                #nav button.active {
+                    background: var(--sage);
+                    color: #fff
+                }
+
+        main {
+            flex: 1;
+            padding: 1.6rem 2.2rem;
+            min-width: 0
+        }
+
+        /* content */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .8rem;
+            align-items: end;
+            margin: 1rem 0 1.4rem
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--slate);
+            border-radius: 6px;
+            padding: .9rem 1.1rem;
+            margin-bottom: .6rem
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem
+        }
+
+        .actions {
+            display: flex;
+            gap: .5rem
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 1rem;
+            margin-top: 1rem
+        }
+
+        .stat {
+            display: grid;
+            gap: .2rem
+        }
+
+            .stat strong {
+                font: 700 1.8rem Georgia,serif;
+                color: var(--sage-dark)
+            }
+
+        .timer {
+            font: 700 4rem Georgia,serif;
+            color: var(--sage);
+            margin: 1.2rem 0
+        }
+
+        @media(max-width:700px) {
+            #app {
+                flex-direction: column
+            }
+
+            .sidebar {
+                width: auto
+            }
+
+            #nav {
+                display: flex;
+                flex-wrap: wrap
+            }
+
+            .stats {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <section id="login-screen" class="login">
+        <form id="login-form" class="login-card">
+            <p class="tag">STUDY SESSION PLANNER</p>
+            <h1>Welcome back,<br>let's plan today.</h1>
+            <label>Email<input name="email" type="email" required></label>
+            <label>Password<input name="password" type="password" required></label>
+            <p id="login-error" class="error" hidden>Incorrect email or password.</p>
+            <button class="btn primary" type="submit">Log In</button>
+            <p class="muted">Demo: jhaymar@jrcc.com / testing</p>
+        </form>
+    </section>
+
+    <div id="app" hidden>
+        <aside class="sidebar">
+            <h2 id="student-name"></h2>
+            <p id="student-course"></p>
+            <nav id="nav"></nav>
+            <button id="logout" class="btn ghost">Log out</button>
+        </aside>
+        <main id="content"></main>
+    </div>
+
+
+    <script>
+    const Store = (() => {
+      const KEY = 'studyPlanner.v1';
+
+      const toISODate = d =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+      const seed = () => ({
+        nextId: 2,
+        students: [{ id: 1, name: 'Jhaymar Torres', email: 'jhaymar@jrcc.com', password: 'testing', course: 'BS Information Technology' }],
+        subjects: [],
+        sessions: []
+      });
+
+      const read = () => {
+        try { return JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { return seed(); }
+      };
+      const update = change => {            // every write goes through here
+        const db = read();
+        change(db);
+        localStorage.setItem(KEY, JSON.stringify(db));
+      };
+
+      return {
+        toISODate,
+
+        login: (email, password) =>
+          read().students.find(s => s.email === email && s.password === password) || null,
+
+        subjects: studentId => read().subjects.filter(s => s.studentId === studentId),
+        addSubject: (studentId, name) => update(db => db.subjects.push({ id: db.nextId++, studentId, name })),
+        deleteSubject: id => update(db => { db.subjects = db.subjects.filter(s => s.id !== id); }),
+
+        sessions: (studentId, date) => read().sessions
+          .filter(s => s.studentId === studentId && (!date || s.date === date))
+          .sort((a, b) => a.date.localeCompare(b.date)),
+        addSession: session => update(db => db.sessions.push({ ...session, id: db.nextId++, status: 'Pending' })),
+        markDone: id => update(db => { db.sessions.find(s => s.id === id).status = 'Done'; }),
+        deleteSession: id => update(db => { db.sessions = db.sessions.filter(s => s.id !== id); }),
+
+        stats: studentId => {
+          const done = read().sessions.filter(s => s.studentId === studentId && s.status === 'Done');
+          const days = new Set(done.map(s => s.date));
+          let streak = 0;
+          const day = new Date();
+          if (!days.has(toISODate(day))) day.setDate(day.getDate() - 1);
+          while (days.has(toISODate(day))) { streak++; day.setDate(day.getDate() - 1); }
+          return { completed: done.length, minutes: done.reduce((sum, s) => sum + s.minutes, 0), streak };
+        }
+      };
+    })();
+    </script>
+
+    <script>
+    const FocusTimer = (() => {
+      let minutes = 25, remaining = 25 * 60, handle = null;
+      let onTick = () => {}, onDone = () => {};
+
+      const beep = (frequency, ms) => {
+        try {
+          const audio = new (window.AudioContext || window.webkitAudioContext)();
+          const tone = audio.createOscillator();
+          tone.frequency.value = frequency;
+          tone.connect(audio.destination);
+          tone.start();
+          setTimeout(() => { tone.stop(); audio.close(); }, ms);
+        } catch { /* sound is optional */ }
+      };
+
+      const pause = () => { clearInterval(handle); handle = null; };
+
+      const tick = () => {
+        remaining--;
+        onTick(remaining);
+        if (remaining > 0 && remaining <= 10) beep(700, 150);   // warning beeps
+        if (remaining <= 0) { pause(); beep(1000, 600); onDone(); }
+      };
+
+      return {
+        bind: (tickFn, doneFn) => { onTick = tickFn; onDone = doneFn; },
+        get minutes() { return minutes; },
+        get remaining() { return remaining; },
+        set: m => { if (handle) return false; minutes = m; remaining = m * 60; return true; },
+        start: () => { if (!handle && remaining > 0) handle = setInterval(tick, 1000); },
+        pause,
+        reset: () => { pause(); remaining = minutes * 60; },
+        format: s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+      };
+    })();
+    </script>
+
+    <script>
+    const Views = (() => {
+      const esc = text => String(text).replace(/[&<>"']/g,
+        c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+      const list = (items, renderItem, emptyMessage) =>
+        items.length ? items.map(renderItem).join('') : `<p class="muted">${emptyMessage}</p>`;
+
+      const sessionCard = (s, deletable) => `
+        <article class="card row">
+          <div>
+            <strong>${esc(s.title)}</strong>
+            <p class="muted">${esc(s.subject)} � ${s.date} � ${s.minutes} min � ${s.status}</p>
+          </div>
+          <div class="actions">
+            ${s.status !== 'Done' ? `<button class="btn primary" data-action="done" data-id="${s.id}">Mark Done</button>` : ''}
+            ${deletable ? `<button class="btn danger" data-action="delete-session" data-id="${s.id}">Delete</button>` : ''}
+          </div>
+        </article>`;
+
+      return {
+        today: ({ student }) => `
+          <h2>Today's Sessions</h2>
+          <p class="muted">Welcome, ${esc(student.name)} � ${esc(student.course)}</p>
+          ${list(Store.sessions(student.id, Store.toISODate(new Date())), s => sessionCard(s, false),
+            'No sessions planned for today. Add one in the Sessions tab!')}`,
+
+        subjects: ({ student }) => `
+          <h2>Subjects</h2>
+          <form class="form-row" data-form="add-subject">
+            <label>Subject name<input name="name" required></label>
+            <button class="btn primary">Add Subject</button>
+          </form>
+          ${list(Store.subjects(student.id), s => `
+            <article class="card row">
+              <strong>${esc(s.name)}</strong>
+              <button class="btn danger" data-action="delete-subject" data-id="${s.id}">Delete</button>
+            </article>`, 'No subjects yet. Add your first one above!')}`,
+
+        sessions: ({ student }) => `
+          <h2>Sessions</h2>
+          <form class="form-row" data-form="add-session">
+            <label>Subject
+              <select name="subject" required>
+                <option value="">Choose...</option>
+                ${Store.subjects(student.id).map(s => `<option>${esc(s.name)}</option>`).join('')}
+              </select>
+            </label>
+            <label>Title<input name="title" required></label>
+            <label>Date<input name="date" type="date" value="${Store.toISODate(new Date())}" required></label>
+            <label>Minutes<input name="minutes" type="number" min="1" max="600" required></label>
+            <button class="btn primary">Add Session</button>
+          </form>
+          ${list(Store.sessions(student.id), s => sessionCard(s, true), 'No sessions yet. Add your first one above!')}`,
+
+        timer: () => `
+          <h2>Focus Timer</h2>
+          <form class="form-row" data-form="set-timer">
+            <label>Set minutes<input name="minutes" type="number" min="1" max="600" value="${FocusTimer.minutes}"></label>
+            <button class="btn dark">Set</button>
+          </form>
+          <p id="timer-display" class="timer">${FocusTimer.format(FocusTimer.remaining)}</p>
+          <div class="actions">
+            <button class="btn primary" data-action="timer-start">Start</button>
+            <button class="btn amber" data-action="timer-pause">Pause</button>
+            <button class="btn danger" data-action="timer-reset">Reset</button>
+          </div>`,
+
+        progress: ({ student }) => {
+          const { completed, minutes, streak } = Store.stats(student.id);
+          const stat = (value, label) =>
+            `<div class="card stat"><strong>${value}</strong><span class="muted">${label}</span></div>`;
+          return `
+            <h2>Progress</h2>
+            <div class="stats">
+              ${stat(completed, 'Sessions completed')}
+              ${stat(`${Math.floor(minutes / 60)}h ${minutes % 60}m`, 'Total focus time')}
+              ${stat(streak, 'Day streak')}
+            </div>`;
+        }
+      };
+    })();
+    </script>
+
+    <script>
+    (() => {
+      const $ = id => document.getElementById(id);
+      const PAGES = [['today', 'Today'], ['subjects', 'Subjects'], ['sessions', 'Sessions'],
+                     ['timer', 'Focus Timer'], ['progress', 'Progress']];
+
+      let student = null;
+      let page = 'today';
+
+      const actions = {
+        'done': id => Store.markDone(id),
+        'delete-session': id => confirm('Delete this session?') && Store.deleteSession(id),
+        'delete-subject': id => confirm('Delete this subject?') && Store.deleteSubject(id),
+        'timer-start': () => FocusTimer.start(),
+        'timer-pause': () => FocusTimer.pause(),
+        'timer-reset': () => FocusTimer.reset()
+      };
+      const forms = {
+        'add-subject': d => Store.addSubject(student.id, d.name.trim()),
+        'add-session': d => Store.addSession({
+          studentId: student.id, subject: d.subject, title: d.title.trim(), date: d.date, minutes: Number(d.minutes)
+        }),
+        'set-timer': d => FocusTimer.set(Number(d.minutes)) || alert('Pause or reset the timer before changing the time.')
+      };
+
+      const render = () => {
+        $('content').innerHTML = Views[page]({ student });
+        document.querySelectorAll('#nav button')
+          .forEach(b => b.classList.toggle('active', b.dataset.page === page));
+      };
+      const go = name => { page = name; render(); };
+
+      const showApp = found => {
+        student = found;
+        $('login-screen').hidden = true;
+        $('app').hidden = false;
+        $('student-name').textContent = student.name;
+       <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Study Session Planner</title>
+
+  <style>
+    :root{--ink:#1E2A44;--paper:#F6F3EC;--sage:#5B8C7B;--sage-dark:#456B5E;--amber:#E0A458;--red:#C1666B;--slate:#DCE3E8;--muted:#7A8290}
+    *{box-sizing:border-box}
+    [hidden]{display:none!important}
+    body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink)}
+    h1,h2{font-family:Georgia,serif;margin:0 0 .4rem}
+    .muted{color:var(--muted);font-size:.85rem;margin:.2rem 0}
+    .error{color:var(--red);font-size:.85rem;margin:0}
+
+    /* buttons */
+    .btn{border:0;border-radius:5px;padding:.55rem 1rem;color:#fff;font:inherit;font-size:.9rem;cursor:pointer}
+    .btn:hover{filter:brightness(.92)}
+    .primary{background:var(--sage)}.danger{background:var(--red)}.amber{background:var(--amber)}.dark{background:var(--ink)}
+    .ghost{background:none;border:1px solid #4a5675}
+
+    /* form fields */
+    label{display:grid;gap:.3rem;font-size:.8rem;font-weight:600;color:#5B6472}
+    input,select{padding:.5rem .6rem;border:1.5px solid var(--slate);border-radius:5px;font:inherit;background:#FCFBF8;color:var(--ink)}
+    input:focus,select:focus{outline:none;border-color:var(--sage)}
+
+    /* login */
+    .login{min-height:100vh;display:grid;place-items:center;background-image:linear-gradient(#E4DECD 1px,transparent 1px),linear-gradient(90deg,#E4DECD 1px,transparent 1px);background-size:28px 28px}
+    .login-card{background:#fff;width:min(340px,92vw);padding:2rem;border-top:4px solid var(--sage);border-radius:6px;box-shadow:0 18px 40px rgba(30,42,68,.14);display:grid;gap:.9rem}
+    .tag{margin:0;font-size:.7rem;font-weight:600;letter-spacing:.4px;color:var(--sage-dark)}
+
+    /* layout */
+    #app{display:flex;min-height:100vh}
+    .sidebar{width:200px;flex-shrink:0;background:var(--ink);color:#E9E5DA;padding:1.4rem 1rem;display:flex;flex-direction:column}
+    .sidebar h2{font-size:1rem}
+    .sidebar p{margin:0 0 1rem;font-size:.75rem;color:#8B94A6}
+    #nav{display:grid;gap:.25rem;flex:1;align-content:start}
+    #nav button{background:none;border:0;color:#C7CCD8;text-align:left;padding:.6rem .7rem;border-radius:6px;font:inherit;cursor:pointer}
+    #nav button.active{background:var(--sage);color:#fff}
+    main{flex:1;padding:1.6rem 2.2rem;min-width:0}
+
+    /* content */
+    .form-row{display:flex;flex-wrap:wrap;gap:.8rem;align-items:end;margin:1rem 0 1.4rem}
+    .card{background:#fff;border:1px solid var(--slate);border-radius:6px;padding:.9rem 1.1rem;margin-bottom:.6rem}
+    .row{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+    .actions{display:flex;gap:.5rem}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}
+    .stat{display:grid;gap:.2rem}
+    .stat strong{font:700 1.8rem Georgia,serif;color:var(--sage-dark)}
+    .timer{font:700 4rem Georgia,serif;color:var(--sage);margin:1.2rem 0}
+
+    @media(max-width:700px){#app{flex-direction:column}.sidebar{width:auto}#nav{display:flex;flex-wrap:wrap}.stats{grid-template-columns:1fr}}
+  </style>
+</head>
+
+<body>
+  <section id="login-screen" class="login">
+    <form id="login-form" class="login-card">
+      <p class="tag">STUDY SESSION PLANNER</p>
+      <h1>Welcome back,<br>let's plan today.</h1>
+      <label>Email<input name="email" type="email" required></label>
+      <label>Password<input name="password" type="password" required></label>
+      <p id="login-error" class="error" hidden>Incorrect email or password.</p>
+      <button class="btn primary" type="submit">Log In</button>
+      <p class="muted">Demo: jhaymar@jrcc.com / testing</p>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+    <aside class="sidebar">
+      <h2 id="student-name"></h2>
+      <p id="student-course"></p>
+      <nav id="nav"></nav>
+      <button id="logout" class="btn ghost">Log out</button>
+    </aside>
+    <main id="content"></main>
+  </div>
+
+
+                           <script>
+    const Store = (() => {
+      const KEY = 'studyPlanner.v1';
+
+      const toISODate = d =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+      const seed = () => ({
+        nextId: 2,
+        students: [{ id: 1, name: 'Jhaymar Torres', email: 'jhaymar@jrcc.com', password: 'testing', course: 'BS Information Technology' }],
+        subjects: [],
+        sessions: []
+      });
+
+      const read = () => {
+        try { return JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { return seed(); }
+      };
+      const update = change => {            // every write goes through here
+        const db = read();
+        change(db);
+        localStorage.setItem(KEY, JSON.stringify(db));
+      };
+
+      return {
+        toISODate,
+
+        login: (email, password) =>
+          read().students.find(s => s.email === email && s.password === password) || null,
+
+        subjects: studentId => read().subjects.filter(s => s.studentId === studentId),
+        addSubject: (studentId, name) => update(db => db.subjects.push({ id: db.nextId++, studentId, name })),
+        deleteSubject: id => update(db => { db.subjects = db.subjects.filter(s => s.id !== id); }),
+
+        sessions: (studentId, date) => read().sessions
+          .filter(s => s.studentId === studentId && (!date || s.date === date))
+          .sort((a, b) => a.date.localeCompare(b.date)),
+        addSession: session => update(db => db.sessions.push({ ...session, id: db.nextId++, status: 'Pending' })),
+        markDone: id => update(db => { db.sessions.find(s => s.id === id).status = 'Done'; }),
+        deleteSession: id => update(db => { db.sessions = db.sessions.filter(s => s.id !== id); }),
+
+        stats: studentId => {
+          const done = read().sessions.filter(s => s.studentId === studentId && s.status === 'Done');
+          const days = new Set(done.map(s => s.date));
+          let streak = 0;
+          const day = new Date();
+          if (!days.has(toISODate(day))) day.setDate(day.getDate() - 1);
+          while (days.has(toISODate(day))) { streak++; day.setDate(day.getDate() - 1); }
+          return { completed: done.length, minutes: done.reduce((sum, s) => sum + s.minutes, 0), streak };
+        }
+      };
+    })();
+  </script>
+
+  <script>
+    const FocusTimer = (() => {
+      let minutes = 25, remaining = 25 * 60, handle = null;
+      let onTick = () => {}, onDone = () => {};
+
+      const beep = (frequency, ms) => {
+        try {
+          const audio = new (window.AudioContext || window.webkitAudioContext)();
+          const tone = audio.createOscillator();
+          tone.frequency.value = frequency;
+          tone.connect(audio.destination);
+          tone.start();
+          setTimeout(() => { tone.stop(); audio.close(); }, ms);
+        } catch { /* sound is optional */ }
+      };
+
+      const pause = () => { clearInterval(handle); handle = null; };
+
+      const tick = () => {
+        remaining--;
+        onTick(remaining);
+        if (remaining > 0 && remaining <= 10) beep(700, 150);   // warning beeps
+        if (remaining <= 0) { pause(); beep(1000, 600); onDone(); }
+      };
+
+      return {
+        bind: (tickFn, doneFn) => { onTick = tickFn; onDone = doneFn; },
+        get minutes() { return minutes; },
+        get remaining() { return remaining; },
+        set: m => { if (handle) return false; minutes = m; remaining = m * 60; return true; },
+        start: () => { if (!handle && remaining > 0) handle = setInterval(tick, 1000); },
+        pause,
+        reset: () => { pause(); remaining = minutes * 60; },
+        format: s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+      };
+    })();
+  </script>
+
+  <script>
+    const Views = (() => {
+      const esc = text => String(text).replace(/[&<>"']/g,
+        c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+      const list = (items, renderItem, emptyMessage) =>
+        items.length ? items.map(renderItem).join('') : `<p class="muted">${emptyMessage}</p>`;
+
+      const sessionCard = (s, deletable) => `
+        <article class="card row">
+          <div>
+            <strong>${esc(s.title)}</strong>
+            <p class="muted">${esc(s.subject)} � ${s.date} � ${s.minutes} min � ${s.status}</p>
+          </div>
+          <div class="actions">
+            ${s.status !== 'Done' ? `<button class="btn primary" data-action="done" data-id="${s.id}">Mark Done</button>` : ''}
+            ${deletable ? `<button class="btn danger" data-action="delete-session" data-id="${s.id}">Delete</button>` : ''}
+          </div>
+        </article>`;
+
+      return {
+        today: ({ student }) => `
+          <h2>Today's Sessions</h2>
+          <p class="muted">Welcome, ${esc(student.name)} � ${esc(student.course)}</p>
+          ${list(Store.sessions(student.id, Store.toISODate(new Date())), s => sessionCard(s, false),
+            'No sessions planned for today. Add one in the Sessions tab!')}`,
+
+        subjects: ({ student }) => `
+          <h2>Subjects</h2>
+          <form class="form-row" data-form="add-subject">
+            <label>Subject name<input name="name" required></label>
+            <button class="btn primary">Add Subject</button>
+          </form>
+          ${list(Store.subjects(student.id), s => `
+            <article class="card row">
+              <strong>${esc(s.name)}</strong>
+              <button class="btn danger" data-action="delete-subject" data-id="${s.id}">Delete</button>
+            </article>`, 'No subjects yet. Add your first one above!')}`,
+
+        sessions: ({ student }) => `
+          <h2>Sessions</h2>
+          <form class="form-row" data-form="add-session">
+            <label>Subject
+              <select name="subject" required>
+                <option value="">Choose...</option>
+                ${Store.subjects(student.id).map(s => `<option>${esc(s.name)}</option>`).join('')}
+              </select>
+            </label>
+            <label>Title<input name="title" required></label>
+            <label>Date<input name="date" type="date" value="${Store.toISODate(new Date())}" required></label>
+            <label>Minutes<input name="minutes" type="number" min="1" max="600" required></label>
+            <button class="btn primary">Add Session</button>
+          </form>
+          ${list(Store.sessions(student.id), s => sessionCard(s, true), 'No sessions yet. Add your first one above!')}`,
+
+        timer: () => `
+          <h2>Focus Timer</h2>
+          <form class="form-row" data-form="set-timer">
+            <label>Set minutes<input name="minutes" type="number" min="1" max="600" value="${FocusTimer.minutes}"></label>
+            <button class="btn dark">Set</button>
+          </form>
+          <p id="timer-display" class="timer">${FocusTimer.format(FocusTimer.remaining)}</p>
+          <div class="actions">
+            <button class="btn primary" data-action="timer-start">Start</button>
+            <button class="btn amber" data-action="timer-pause">Pause</button>
+            <button class="btn danger" data-action="timer-reset">Reset</button>
+          </div>`,
+
+        progress: ({ student }) => {
+          const { completed, minutes, streak } = Store.stats(student.id);
+          const stat = (value, label) =>
+            `<div class="card stat"><strong>${value}</strong><span class="muted">${label}</span></div>`;
+          return `
+            <h2>Progress</h2>
+            <div class="stats">
+              ${stat(completed, 'Sessions completed')}
+              ${stat(`${Math.floor(minutes / 60)}h ${minutes % 60}m`, 'Total focus time')}
+              ${stat(streak, 'Day streak')}
+            </div>`;
+        }
+      };
+    })();
+  </script>
+
+  <script>
+    (() => {
+      const $ = id => document.getElementById(id);
+      const PAGES = [['today', 'Today'], ['subjects', 'Subjects'], ['sessions', 'Sessions'],
+                     ['timer', 'Focus Timer'], ['progress', 'Progress']];
+
+      let student = null;
+      let page = 'today';
+
+      // What each button / form does (looked up by its data-action / data-form)
+      const actions = {
+        'done': id => Store.markDone(id),
+        'delete-session': id => confirm('Delete this session?') && Store.deleteSession(id),
+        'delete-subject': id => confirm('Delete this subject?') && Store.deleteSubject(id),
+        'timer-start': () => FocusTimer.start(),
+        'timer-pause': () => FocusTimer.pause(),
+        'timer-reset': () => FocusTimer.reset()
+      };
+      const forms = {
+        'add-subject': d => Store.addSubject(student.id, d.name.trim()),
+        'add-session': d => Store.addSession({
+          studentId: student.id, subject: d.subject, title: d.title.trim(), date: d.date, minutes: Number(d.minutes)
+        }),
+        'set-timer': d => FocusTimer.set(Number(d.minutes)) || alert('Pause or reset the timer before changing the time.')
+      };
+
+      const render = () => {
+        $('content').innerHTML = Views[page]({ student });
+        document.querySelectorAll('#nav button')
+          .forEach(b => b.classList.toggle('active', b.dataset.page === page));
+      };
+      const go = name => { page = name; render(); };
+
+      const showApp = found => {
+        student = found;
+        $('login-screen').hidden = true;
+        $('app').hidden = false;
+        $('student-name').textContent = student.name;
+        $('student-course').textContent = student.course;
+        go('today');
+      };
+
+      const logout = () => {
+        FocusTimer.pause();
+        student = null;
+        $('app').hidden = true;
+        $('login-screen').hidden = false;
+        $('login-form').reset();
+      };
+
+      $('nav').innerHTML = PAGES.map(([key, label]) => `<button data-page="${key}">${label}</button>`).join('');
+      $('nav').addEventListener('click', e => e.target.dataset.page && go(e.target.dataset.page));
+      $('logout').addEventListener('click', logout);
+
+      $('login-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const { email, password } = Object.fromEntries(new FormData(e.target));
+        const found = Store.login(email.trim(), password);
+        $('login-error').hidden = Boolean(found);
+        if (found) showApp(found);
+      });
+
+      $('content').addEventListener('click', e => {
+        const button = e.target.closest('[data-action]');
+        if (!button) return;
+        actions[button.dataset.action](Number(button.dataset.id));
+        render();
+      });
+      $('content').addEventListener('submit', e => {
+        e.preventDefault();
+        forms[e.target.dataset.form](Object.fromEntries(new FormData(e.target)));
+        render();
+      });
+
+      FocusTimer.bind(
+        seconds => { const display = $('timer-display'); if (display) display.textContent = FocusTimer.format(seconds); },
+        () => alert("Time's up! Your study session is complete.")
+      );
+    })();
+  </script>
+</body>
+</html> $('student-course').textContent = student.course;
+        go('today');
+      };
+
+      const logout = () => {
+        FocusTimer.pause();
+        student = null;
+        $('app').hidden = true;
+        $('login-screen').hidden = false;
+        $('login-form').reset();
+      };
+
+      $('nav').innerHTML = PAGES.map(([key, label]) => `<button data-page="${key}">${label}</button>`).join('');
+      $('nav').addEventListener('click', e => e.target.dataset.page && go(e.target.dataset.page));
+      $('logout').addEventListener('click', logout);
+
+      $('login-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const { email, password } = Object.fromEntries(new FormData(e.target));
+        const found = Store.login(email.trim(), password);
+        $('login-error').hidden = Boolean(found);
+        if (found) showApp(found);
+      });
+
+      $('content').addEventListener('click', e => {
+        const button = e.target.closest('[data-action]');
+        if (!button) return;
+        actions[button.dataset.action](Number(button.dataset.id));
+        render();
+      });
+      $('content').addEventListener('submit', e => {
+        e.preventDefault();
+        forms[e.target.dataset.form](Object.fromEntries(new FormData(e.target)));
+        render();
+      });
+
+      FocusTimer.bind(
+        seconds => { const display = $('timer-display'); if (display) display.textContent = FocusTimer.format(seconds); },
+        () => alert("Time's up! Your study session is complete.")
+      );
+    })();
+    </script>
+</body>
+</html>
